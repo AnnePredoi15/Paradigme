@@ -2,7 +2,7 @@ package org.example;
 
 import java.io.*;
 import java.util.*;
-
+//Salut de la anne la voi lalallalal
 public class Main {
 
     public static boolean StudentPrezent(ArrayList<Student> list, Student cautat) {
