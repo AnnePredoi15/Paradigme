@@ -2,7 +2,7 @@ package org.example;
 
 import java.io.*;
 import java.util.*;
-//Salut de la anne la voi lalallalalll
+
 public class Main {
 
     public static boolean StudentPrezent(ArrayList<Student> list, Student cautat) {
@@ -21,6 +21,31 @@ public class Main {
             }
         }
         return false;
+    }
+
+    public static void afiseazaNotaDupaPrenume(List<Student> listaStudenti, HashMap<Integer, Integer> note, String prenumeCautat) {
+        boolean gasit = false;
+
+        for (Student s : listaStudenti) {
+            // Folosim equalsIgnoreCase pentru a nu conta dacă scriem cu litere mari sau mici
+            if (s.prenume.equalsIgnoreCase(prenumeCautat)) {
+                gasit = true;
+                int matricol = s.nrMatricol;
+
+                // Verificăm dacă acest student are notă în HashMap
+                if (note.containsKey(matricol)) {
+                    int nota = note.get(matricol);
+                    System.out.println("Studentul " + s.prenume + " are nota: " + nota);
+                } else {
+                    System.out.println("Studentul a fost gasit, dar nu are nicio nota inregistrata.");
+                }
+                // Opțional: break; dacă vrei să se oprească la primul student găsit cu acest nume
+            }
+        }
+
+        if (!gasit) {
+            System.out.println("Nu am gasit niciun student cu prenumele: " + prenumeCautat);
+        }
     }
 
     public static void main(String[] args) {
@@ -75,31 +100,33 @@ public class Main {
         }
 
         boolean rezultat = StudentPrezent(list, s2);
-        System.out.println("\nStudent prezent in ArrayList: " + rezultat);
+        System.out.println("\nStudentul s2 prezent in ArrayList: " + rezultat);
 
         boolean rezultat1 = StudentPrezent1(hashSet, s2);
-        System.out.println("Student prezent in HashSet: " + rezultat1);
+        System.out.println("\nStudentul s2 prezent in HashSet: " + rezultat1);
 
 
         List<Student> studenti = new ArrayList<>();
 
         try {
-            BufferedReader br = new BufferedReader(new FileReader("src/main/resources/Studenti.csv"));
-            String linie;
 
-            while ((linie = br.readLine()) != null) {
+            File fisierIntrare = new File("src/main/resources/studenti.csv");
+            if (fisierIntrare.exists()) {
+                try (Scanner scanner = new Scanner(fisierIntrare)) {
+                    while (scanner.hasNextLine()) {
+                        String linie = scanner.nextLine();
+                        if (linie.isBlank()) continue;
 
-                String[] date = linie.split(",");
+                        String[] date = linie.split(",");
+                        int nrMatricol = Integer.parseInt(date[0].trim());
+                        String nume = date[1].trim();
+                        String prenume = date[2].trim();
+                        int formatieDeStudiu = Integer.parseInt(date[3].trim());
 
-                int nrMatricol = Integer.parseInt(date[0]);
-                String nume = date[1];
-                String prenume = date[2];
-                int formatieDeStudiu = Integer.parseInt(date[3]);
-
-                studenti.add(new Student(nrMatricol, prenume, nume, formatieDeStudiu));
+                        studenti.add(new Student(nrMatricol, prenume, nume, formatieDeStudiu));
+                    }
+                }
             }
-
-            br.close();
 
             studenti.sort(
                     Comparator.comparing((Student s) -> s.nume)
@@ -108,16 +135,50 @@ public class Main {
                             .thenComparingInt(s -> s.nrMatricol)
             );
 
-            PrintWriter writer = new PrintWriter("src/main/resources/studentisortati.csv");
-
-            for (Student s : studenti) {
-                writer.println(s.nrMatricol + "," + s.nume + "," + s.prenume + "," + s.formatieDeStudiu);
+            try (PrintWriter writer = new PrintWriter("src/main/resources/studentisortati.csv")) {
+                for (Student s : studenti) {
+                    writer.println(s.nrMatricol + "," + s.nume + "," + s.prenume + "," + s.formatieDeStudiu);
+                }
             }
 
-            writer.close();
+            System.out.println("\nFisierul sortat a fost creat.");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("\nEroare");
         }
+
+
+        HashMap<Integer, Integer> noteStudenti = new HashMap<>();
+
+        try {
+            File fNote = new File("src/main/resources/note.csv");
+            if (fNote.exists()) {
+                try (Scanner scannerNote = new Scanner(fNote)) {
+                    while (scannerNote.hasNextLine()) {
+                        String linie = scannerNote.nextLine();
+                        if (linie.trim().isEmpty()) continue;
+
+                        String[] date = linie.split(",");
+                        int matricol = Integer.parseInt(date[0].trim());
+                        int nota = Integer.parseInt(date[1].trim());
+
+                        noteStudenti.put(matricol, nota);
+                    }
+                }
+            } else {
+                System.out.println("\nFisierul note.csv nu a fost gasit!");
+            }
+        } catch (Exception e) {
+            System.out.println("Eroare la citirea notelor ");
+        }
+
+        Scanner tastatura = new Scanner(System.in);
+        System.out.print("\nIntroduceti prenumele studentului pentru a vedea nota: ");
+        String prenumeIntrodus = tastatura.nextLine();
+        afiseazaNotaDupaPrenume(studenti, noteStudenti, prenumeIntrodus);
+
+        tastatura.close();
     }
 }
+
+
