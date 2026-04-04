@@ -5,48 +5,47 @@ import java.util.*;
 
 public class Main {
 
-    public static boolean StudentPrezent(ArrayList<Student> list, Student cautat) {
-        for (Student s : list) {
-            if (s.equals(cautat)) {
-                return true;
-            }
-        }
-        return false;
+    public static List<Student> sortByName(List<Student> lista) {
+        lista.sort(Comparator.comparing(s -> s.nume));
+        return lista;
     }
 
-    public static boolean StudentPrezent1(HashSet<Student> hashSet, Student cautat) {
-        for (Student s : hashSet) {
-            if (s.equals(cautat)) {
-                return true;
-            }
-        }
-        return false;
+    public static List<Student> sortStudents(List<Student> lista) {
+        lista.sort(Comparator.comparingInt((Student s) -> s.formatieDeStudiu).thenComparing(s -> s.nume));
+        return lista;
     }
 
-    public static void afiseazaNotaDupaPrenume(List<Student> listaStudenti, HashMap<Integer, Integer> note, String prenumeCautat) {
-        boolean gasit = false;
-
-        for (Student s : listaStudenti) {
-            // Folosim equalsIgnoreCase pentru a nu conta dacă scriem cu litere mari sau mici
-            if (s.prenume.equalsIgnoreCase(prenumeCautat)) {
-                gasit = true;
-                int matricol = s.nrMatricol;
-
-                // Verificăm dacă acest student are notă în HashMap
-                if (note.containsKey(matricol)) {
-                    int nota = note.get(matricol);
-                    System.out.println("Studentul " + s.prenume + " are nota: " + nota);
-                } else {
-                    System.out.println("Studentul a fost gasit, dar nu are nicio nota inregistrata.");
-                }
-                // Opțional: break; dacă vrei să se oprească la primul student găsit cu acest nume
+    public static void outputStudentList(List<Student> lista) {
+        try (PrintWriter writer = new PrintWriter("src/main/resources/studentisortati.csv")) {
+            for (Student s : lista) {
+                writer.println(s.nrMatricol + "," + s.nume + "," + s.prenume + "," + s.formatieDeStudiu);
             }
-        }
-
-        if (!gasit) {
-            System.out.println("Nu am gasit niciun student cu prenumele: " + prenumeCautat);
+            System.out.println("\nFisierul sortat a fost creat cu succes!");
+        } catch (IOException e) {
+            System.out.println("\nEroare la scrierea in fisier: " + e.getMessage());
         }
     }
+
+    public static int notaStudent(Student student, Map<Student, Integer> mapNote) {
+        if (mapNote == null) return -1;
+        if (mapNote.containsKey(student)) {
+            return mapNote.get(student);
+        } else {
+            return -1;
+        }
+    }
+
+    public static void outputStudentCuNota(List<StudentCuNota> lista) {
+        try (PrintWriter writer = new PrintWriter("src/main/resources/studenticunota.csv")) {
+            for (StudentCuNota s : lista) {
+                writer.println(s.nrMatricol + "," + s.nume + "," + s.prenume + "," + s.formatieDeStudiu + "," + s.nota);
+            }
+            System.out.println("\nFisierul cu studenti si note a fost creat cu succes!");
+        } catch (Exception e) {
+            System.out.println("\nEroare la scrierea in fisier: " + e.getMessage());
+        }
+    }
+
 
     public static void main(String[] args) {
 
@@ -99,11 +98,11 @@ public class Main {
             System.out.println(student);
         }
 
-        boolean rezultat = StudentPrezent(list, s2);
-        System.out.println("\nStudentul s2 prezent in ArrayList: " + rezultat);
+        boolean prezentInLista = s1.studentPrezent(list);
+        System.out.println("\nStudentul este prezent: " + prezentInLista);
 
-        boolean rezultat1 = StudentPrezent1(hashSet, s2);
-        System.out.println("\nStudentul s2 prezent in HashSet: " + rezultat1);
+        boolean prezentInSet = s1.studentPrezentSet(hashSet);
+        System.out.println("Studentul este prezent: " + prezentInSet);
 
 
         List<Student> studenti = new ArrayList<>();
@@ -128,27 +127,15 @@ public class Main {
                 }
             }
 
-            studenti.sort(
-                    Comparator.comparing((Student s) -> s.nume)
-                            .thenComparing(s -> s.prenume)
-                            .thenComparingInt(s -> s.formatieDeStudiu)
-                            .thenComparingInt(s -> s.nrMatricol)
-            );
-
-            try (PrintWriter writer = new PrintWriter("src/main/resources/studentisortati.csv")) {
-                for (Student s : studenti) {
-                    writer.println(s.nrMatricol + "," + s.nume + "," + s.prenume + "," + s.formatieDeStudiu);
-                }
-            }
-
-            System.out.println("\nFisierul sortat a fost creat.");
+            studenti = sortStudents(studenti);
+            outputStudentList(studenti);
 
         } catch (IOException e) {
             System.err.println("\nEroare");
         }
 
 
-        HashMap<Integer, Integer> noteStudenti = new HashMap<>();
+        HashMap<Student, Integer> noteStudenti = new HashMap<>();
 
         try {
             File fNote = new File("src/main/resources/note.csv");
@@ -159,10 +146,20 @@ public class Main {
                         if (linie.trim().isEmpty()) continue;
 
                         String[] date = linie.split(",");
-                        int matricol = Integer.parseInt(date[0].trim());
-                        int nota = Integer.parseInt(date[1].trim());
+                        int matricolCsv = Integer.parseInt(date[0].trim());
+                        int notaCsv = Integer.parseInt(date[1].trim());
 
-                        noteStudenti.put(matricol, nota);
+                        Student studentGasit = null;
+                        for (Student s : studenti) {
+                            if (s.nrMatricol == matricolCsv) {
+                                studentGasit = s;
+                                break;
+                            }
+                        }
+
+                        if (studentGasit != null) {
+                            noteStudenti.put(studentGasit, notaCsv);
+                        }
                     }
                 }
             } else {
@@ -175,10 +172,40 @@ public class Main {
         Scanner tastatura = new Scanner(System.in);
         System.out.print("\nIntroduceti prenumele studentului pentru a vedea nota: ");
         String prenumeIntrodus = tastatura.nextLine();
-        afiseazaNotaDupaPrenume(studenti, noteStudenti, prenumeIntrodus);
 
+        Student studentPentruCautare = null;
+        for (Student s : studenti) {
+            if (s.prenume.equals(prenumeIntrodus)) {
+                studentPentruCautare = s;
+                break;
+            }
+        }
+
+        if (studentPentruCautare != null) {
+            int nota = notaStudent(studentPentruCautare, noteStudenti);
+
+            if (nota != -1) {
+                System.out.println("Studentul " + studentPentruCautare.prenume + " are nota: " + nota);
+            } else {
+                System.out.println("Studentul a fost gasit, dar nu are nota inregistrata.");
+            }
+        } else {
+            System.out.println("Nu am gasit niciun student cu acest prenume in baza de date.");
+        }
+        List<StudentCuNota> lista = new ArrayList<>();
+
+        for (Student s : studenti) {
+            int notaValoare = notaStudent(s, noteStudenti);
+
+            if (notaValoare != -1) {
+                StudentCuNota sn = new StudentCuNota(s.nrMatricol, s.prenume, s.nume, s.formatieDeStudiu, notaValoare);
+                lista.add(sn);
+            }
+        }
+        outputStudentCuNota(lista);
         tastatura.close();
     }
 }
+
 
 
