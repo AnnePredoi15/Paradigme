@@ -126,7 +126,7 @@ public class Main {
                 }
             }
 
-            studenti = sortStudents(studenti);
+            studenti = sortByName(studenti);
             outputStudentList(studenti);
 
         } catch (IOException e) {
