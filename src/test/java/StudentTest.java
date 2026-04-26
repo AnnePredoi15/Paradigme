@@ -19,10 +19,10 @@ public class StudentTest {
 
         Main.sortByName(lista);
 
-        Assertions.assertEquals("Antonescu", lista.get(0).nume);
+        Assertions.assertEquals("Antonescu", lista.get(0).getNume());
 
-        Assertions.assertEquals("Popescu", lista.get(1).nume);
+        Assertions.assertEquals("Popescu", lista.get(1).getNume());
 
-        Assertions.assertEquals("Zaharia", lista.get(2).nume);
+        Assertions.assertEquals("Zaharia", lista.get(2).getNume());
     }
 }

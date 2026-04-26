@@ -6,21 +6,21 @@ import java.util.*;
 public class Main {
 
     public static List<Student> sortByName(List<Student> lista) {
-        lista.sort(Comparator.comparing(s -> s.nume));
+        lista.sort(Comparator.comparing(s -> s.getNume()));
         return lista;
     }
 
     public static List<Student> sortStudents(List<Student> lista) {
-        lista.sort(Comparator.comparingInt((Student s) -> s.formatieDeStudiu).thenComparing(s -> s.nume));
+        lista.sort(Comparator.comparingInt((Student s) -> s.getFormatieDeStudiu()).thenComparing(s -> s.getNume()));
         return lista;
     }
 
     public static void outputStudentList(List<Student> lista) {
         try (PrintWriter writer = new PrintWriter("src/main/resources/studentisortati.csv")) {
             for (Student s : lista) {
-                writer.println(s.nrMatricol + "," + s.nume + "," + s.prenume + "," + s.formatieDeStudiu);
+                writer.println(s.getNrMatricol() + "," + s.getNume() + "," + s.getPrenume() + "," + s.getFormatieDeStudiu());
             }
-            System.out.println("\nFisierul sortat a fost creat cu succes!");
+            System.out.println("\nFisierul de sortare a fost creat cu succes!");
         } catch (IOException e) {
             System.out.println("\nEroare la scrierea in fisier: " + e.getMessage());
         }
@@ -38,12 +38,36 @@ public class Main {
     public static void outputStudentCuNota(List<StudentCuNota> lista) {
         try (PrintWriter writer = new PrintWriter("src/main/resources/studenticunota.csv")) {
             for (StudentCuNota s : lista) {
-                writer.println(s.nrMatricol + "," + s.nume + "," + s.prenume + "," + s.formatieDeStudiu + "," + s.nota);
+                writer.println(s.getNrMatricol() + "," + s.getNume() + "," + s.getPrenume() + "," + s.getFormatieDeStudiu() + "," + s.getNota());
             }
             System.out.println("\nFisierul cu studenti si note a fost creat cu succes!");
         } catch (Exception e) {
             System.out.println("\nEroare la scrierea in fisier: " + e.getMessage());
         }
+    }
+
+    public static void mutaStudentInFormatie(List<StudentCuNota> lista, int nrMatricol, int nouaFormatie) {
+        for (int i = 0; i < lista.size(); i++) {
+            if (lista.get(i).getNrMatricol() == nrMatricol) {
+                StudentCuNota studentNou = lista.get(i).cuNouaFormatie(nouaFormatie);
+                lista.set(i, studentNou);
+                System.out.println("\nStudentul cu numarul matricol " + nrMatricol + " a fost mutat in formatia " + nouaFormatie);
+                break;
+            }
+        }
+    }
+
+    public static List<List<StudentCuNota>> imparteInDouaFormatii(List<StudentCuNota> lista) {
+        int mijloc = (lista.size() + 1) / 2;
+
+        List<StudentCuNota> formatia1 = new ArrayList<>(lista.subList(0, mijloc));
+        List<StudentCuNota> formatia2 = new ArrayList<>(lista.subList(mijloc, lista.size()));
+
+        List<List<StudentCuNota>> rezultat = new ArrayList<>();
+        rezultat.add(formatia1);
+        rezultat.add(formatia2);
+
+        return rezultat;
     }
 
     public static void main(String[] args) {
@@ -150,7 +174,7 @@ public class Main {
 
                         Student studentGasit = null;
                         for (Student s : studenti) {
-                            if (s.nrMatricol == matricolCsv) {
+                            if (s.getNrMatricol() == matricolCsv) {
                                 studentGasit = s;
                                 break;
                             }
@@ -168,43 +192,55 @@ public class Main {
             System.out.println("Eroare la citirea notelor ");
         }
 
+
         Scanner tastatura = new Scanner(System.in);
         System.out.print("\nIntroduceti prenumele studentului pentru a vedea nota: ");
-        String prenumeIntrodus = tastatura.nextLine();
+        String prenumeCautat = tastatura.nextLine();
 
-        Student studentPentruCautare = null;
+        Student studentGasit = null;
         for (Student s : studenti) {
-            if (s.prenume.equals(prenumeIntrodus)) {
-                studentPentruCautare = s;
+            if (s.getPrenume().equalsIgnoreCase(prenumeCautat)) {
+                studentGasit = s;
                 break;
             }
         }
 
-        if (studentPentruCautare != null) {
-            int nota = notaStudent(studentPentruCautare, noteStudenti);
-
-            if (nota != -1) {
-                System.out.println("Studentul " + studentPentruCautare.prenume + " are nota: " + nota);
-            } else {
-                System.out.println("Studentul a fost gasit, dar nu are nota inregistrata.");
-            }
+        if (studentGasit != null) {
+            int nota = notaStudent(studentGasit, noteStudenti);
+            System.out.println("Studentul " + studentGasit.getPrenume() + " are nota: " + (nota != -1 ? nota : "Nu are nota"));
         } else {
-            System.out.println("Nu am gasit niciun student cu acest prenume in baza de date.");
+            System.out.println("Studentul nu a fost gasit.");
         }
-        List<StudentCuNota> lista = new ArrayList<>();
 
+        List<StudentCuNota> listaCuNote = new ArrayList<>();
         for (Student s : studenti) {
             int notaValoare = notaStudent(s, noteStudenti);
-
             if (notaValoare != -1) {
-                StudentCuNota sn = new StudentCuNota(s.nrMatricol, s.prenume, s.nume, s.formatieDeStudiu, notaValoare);
-                lista.add(sn);
+                listaCuNote.add(new StudentCuNota(
+                        s.getNrMatricol(), s.getPrenume(), s.getNume(), s.getFormatieDeStudiu(), notaValoare));
             }
         }
-        outputStudentCuNota(lista);
+
+
+        List<List<StudentCuNota>> grupe = imparteInDouaFormatii(listaCuNote);
+
+        System.out.println("\n--- STUDENTI FORMATIA 1 ---");
+        for (StudentCuNota s : grupe.get(0)) {
+            System.out.println(s);
+        }
+
+        System.out.println("\n--- STUDENTI FORMATIA 2 ---");
+        for (StudentCuNota s : grupe.get(1)) {
+            System.out.println(s);
+        }
+
+        if (!listaCuNote.isEmpty()) {
+            int matricolDeMutat = listaCuNote.get(0).getNrMatricol();
+            mutaStudentInFormatie(listaCuNote, matricolDeMutat, 1);
+        }
+
         tastatura.close();
     }
 }
-
 
 

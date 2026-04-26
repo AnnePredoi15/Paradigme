@@ -6,10 +6,10 @@ import java.util.HashSet;
 
 public class Student implements Comparable<Student> {
 
-    public int nrMatricol;
-    public String prenume;
-    public String nume;
-    public int formatieDeStudiu;
+    private final int nrMatricol;
+    private final String prenume;
+    private final String nume;
+    private final int formatieDeStudiu;
 
     public Student(int nrMatricol, String prenume, String nume, int formatieDeStudiu) {
         this.nrMatricol = nrMatricol;
@@ -17,6 +17,12 @@ public class Student implements Comparable<Student> {
         this.nume = nume;
         this.formatieDeStudiu = formatieDeStudiu;
     }
+
+    public int getNrMatricol() { return nrMatricol; }
+    public String getPrenume() { return prenume; }
+    public String getNume() { return nume; }
+    public int getFormatieDeStudiu() { return formatieDeStudiu; }
+
     @Override
     public String toString() {
         return "Student{" +
@@ -44,10 +50,7 @@ public class Student implements Comparable<Student> {
 
         Student s = (Student) obj;
 
-        return nrMatricol == s.nrMatricol &&
-                formatieDeStudiu == s.formatieDeStudiu &&
-                prenume.equals(s.prenume) &&
-                nume.equals(s.nume);
+        return nrMatricol == s.nrMatricol;
     }
 
     @Override
