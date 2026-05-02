@@ -2,6 +2,14 @@ package org.example;
 
 import java.io.*;
 import java.util.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.ss.usermodel.Row;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+
+import java.io.*;
+import java.util.*;
 
 public class Main {
 
@@ -34,6 +42,7 @@ public class Main {
             return -1;
         }
     }
+
 
     public static void outputStudentCuNota(List<StudentCuNota> lista) {
         try (PrintWriter writer = new PrintWriter("src/main/resources/studenticunota.csv")) {
@@ -69,6 +78,62 @@ public class Main {
 
         return rezultat;
     }
+
+    public static void salveazaStudentiNoteXlsx(List<StudentCuNota> studenti, String numeFisier) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
+             FileOutputStream out = new FileOutputStream(numeFisier)) {
+
+            XSSFSheet sheet = workbook.createSheet("StudentiNote");
+            int rowNum = 0;
+            Row header = sheet.createRow(rowNum++);
+            String[] coloane = {"NrMatricol", "Prenume", "Nume", "Formatie", "Nota"};
+            for (int i = 0; i < coloane.length; i++) {
+                header.createCell(i).setCellValue(coloane[i]);
+            }
+
+            for (StudentCuNota s : studenti) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(s.getNrMatricol());
+                row.createCell(1).setCellValue(s.getPrenume());
+                row.createCell(2).setCellValue(s.getNume());
+                row.createCell(3).setCellValue(s.getFormatieDeStudiu());
+                row.createCell(4).setCellValue(s.getNota());
+            }
+
+            workbook.write(out);
+            System.out.println("\n[Excel] Fisier salvat: " + numeFisier);
+        } catch (IOException e) {
+            System.err.println("Eroare I/O: " + e.getMessage());
+        }
+    }
+
+    public static ArrayList<StudentCuNota> citesteStudentiNoteXlsx(String numeFisier) {
+        ArrayList<StudentCuNota> lista = new ArrayList<>();
+
+        try (FileInputStream fis = new FileInputStream(numeFisier);
+             XSSFWorkbook workbook = new XSSFWorkbook(fis)) {
+
+            XSSFSheet sheet = workbook.getSheetAt(0);
+            // Iterăm peste rânduri, sărind header-ul
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue; // Verificare rând gol
+
+                int nrMatricol = (int) row.getCell(0).getNumericCellValue();
+                String prenume = row.getCell(1).getStringCellValue();
+                String nume    = row.getCell(2).getStringCellValue();
+                int formatie   = (int) row.getCell(3).getNumericCellValue();
+                double nota    = row.getCell(4).getNumericCellValue();
+
+                lista.add(new StudentCuNota(nrMatricol, prenume, nume, formatie, nota));
+            }
+        } catch (Exception e) {
+            System.err.println("Eroare la citirea Excel: " + e.getMessage());
+        }
+        return lista;
+    }
+
+
 
     public static void main(String[] args) {
 
@@ -224,12 +289,12 @@ public class Main {
 
         List<List<StudentCuNota>> grupe = imparteInDouaFormatii(listaCuNote);
 
-        System.out.println("\n--- STUDENTI FORMATIA 1 ---");
+        System.out.println("\nSTUDENTI FORMATIA 1");
         for (StudentCuNota s : grupe.get(0)) {
             System.out.println(s);
         }
 
-        System.out.println("\n--- STUDENTI FORMATIA 2 ---");
+        System.out.println("\nSTUDENTI FORMATIA 2");
         for (StudentCuNota s : grupe.get(1)) {
             System.out.println(s);
         }
@@ -239,6 +304,15 @@ public class Main {
             mutaStudentInFormatie(listaCuNote, matricolDeMutat, 1);
         }
 
+        String fisierExcel = "laborator8_students.xlsx";
+        salveazaStudentiNoteXlsx(listaCuNote, fisierExcel);
+
+        ArrayList<StudentCuNota> studentiDinXlsx = citesteStudentiNoteXlsx(fisierExcel);
+
+        System.out.println("\nDatele citite din Excel sunt:");
+        for (StudentCuNota s : studentiDinXlsx) {
+            System.out.println(s);
+        }
         tastatura.close();
     }
 }
