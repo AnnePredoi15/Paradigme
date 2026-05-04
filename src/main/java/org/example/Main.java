@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -114,10 +115,9 @@ public class Main {
              XSSFWorkbook workbook = new XSSFWorkbook(fis)) {
 
             XSSFSheet sheet = workbook.getSheetAt(0);
-            // Iterăm peste rânduri, sărind header-ul
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
-                if (row == null) continue; // Verificare rând gol
+                if (row == null) continue;
 
                 int nrMatricol = (int) row.getCell(0).getNumericCellValue();
                 String prenume = row.getCell(1).getStringCellValue();
@@ -313,8 +313,52 @@ public class Main {
         for (StudentCuNota s : studentiDinXlsx) {
             System.out.println(s);
         }
+
+        System.out.println("\nStudenti cu nota 10:");
+        listaCuNote.stream()
+                .filter(s -> s.getNota() == 10)
+                .forEach(System.out::println);
+
+        System.out.println("\nStudenti cu nota sub 5:");
+        listaCuNote.stream()
+                .filter(s -> s.getNota() < 5)
+                .forEach(System.out::println);
+
+        List<StudentCuNota> listaMapata = listaCuNote.stream()
+                .map(s -> s.getNota() < 4 ? new StudentCuNota(s.getNrMatricol(), s.getPrenume(), s.getNume(), s.getFormatieDeStudiu(), 4.0) : s)
+                .collect(Collectors.toList());
+        System.out.println("\nLista cu nota minima 4:");
+        listaMapata.forEach(System.out::println);
+
+        double sumaNote = listaCuNote.stream()
+                .map(StudentCuNota::getNota)
+                .reduce(0.0, (a, b) -> a + b);
+        System.out.println("\nSuma notelor tuturor studentilor: " + sumaNote);
+
+        if (!listaCuNote.isEmpty()) {
+            double media = listaCuNote.stream()
+                    .map(StudentCuNota::getNota)
+                    .reduce(0.0, Double::sum) / listaCuNote.size();
+            System.out.println("Media notelor: " + String.format("%.2f", media));
+        }
+
         tastatura.close();
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
