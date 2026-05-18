@@ -2,10 +2,10 @@ package org.example;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 
 public class Main {
 
-    // Păstrăm metodele de sortare, ele țin de logica aplicației
     public static List<Student> sortByName(List<Student> lista) {
         lista.sort(Comparator.comparing(s -> s.getNume()));
         return lista;
@@ -52,7 +52,6 @@ public class Main {
 
     public static void main(String[] args) {
 
-        // --- SECȚIUNEA 1: Teste Colecții (Rămâne neschimbată) ---
         Student s1 = new Student(1234, "Ion", "Popescu", 101);
         Student s2 = new Student(6758, "Ana", "Popa", 213);
         Student s3 = new Student(3582, "Maria", "Georgescu", 223);
@@ -216,6 +215,27 @@ public class Main {
                     .reduce(0.0, Double::sum) / listaCuNote.size();
             System.out.println("Media notelor: " + String.format("%.2f", media));
         }
+
+
+        CompletableFuture<List<Student>> taskFisier1 = CompletableFuture.supplyAsync(() ->
+                csvDao.citesteStudenti("src/main/resources/studenti.csv")
+        );
+
+        CompletableFuture<List<Student>> taskFisier2 = CompletableFuture.supplyAsync(() ->
+                csvDao.citesteStudenti("src/main/resources/studenti2.csv")
+        );
+
+        List<Student> toateGrupele = taskFisier1.thenCombine(taskFisier2, (lista1, lista2) -> {
+            List<Student> listaCombinata = new ArrayList<>();
+            listaCombinata.addAll(lista1);
+            listaCombinata.addAll(lista2);
+            return listaCombinata;
+        }).join();
+
+        sortByName(toateGrupele);
+
+        System.out.println("\nStudentii combinati din ambele fisiere (Sortati dupa Nume):");
+        toateGrupele.forEach(System.out::println);
 
         tastatura.close();
     }
